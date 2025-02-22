@@ -1,13 +1,9 @@
-"use client";
-
-import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-
-const Page = () => {
-  const tasks = useQuery(api.tasks.get);
+const TestPage = () => {
   return (
-    <main>{tasks?.map(({ _id, text }) => <div key={_id}>{text}</div>)}</main>
+    <div>
+      <h1>Test Page</h1>
+    </div>
   );
 };
 
-export default Page;
+export default TestPage;
