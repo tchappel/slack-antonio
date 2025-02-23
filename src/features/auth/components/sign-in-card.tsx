@@ -83,6 +83,15 @@ export const SignInCard = () => {
             signInWithPassword(formData);
           }}
         >
+          {step === "signUp" && (
+            <Input
+              name="name"
+              type="text"
+              disabled={pending}
+              placeholder="Full Name"
+              required
+            />
+          )}
           <Input
             name="email"
             type="email"
