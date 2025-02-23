@@ -12,53 +12,101 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { SignInFlow } from "../types";
+import { TriangleAlert } from "lucide-react";
 
 import { useAuthActions } from "@convex-dev/auth/react";
 
-interface SignInCardProps {
-  setState: (state: SignInFlow) => void;
-}
-
-export const SignInCard = ({ setState }: SignInCardProps) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export const SignInCard = () => {
+  const [step, setStep] = useState<"signUp" | "signIn">("signIn");
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+
   const { signIn } = useAuthActions();
 
-  const signInWithProvider = (provider: "google" | "github") => {
+  const signInWIthProvider = async (provider: "google" | "github") => {
     setPending(true);
-    signIn(provider).finally(() => {
+    try {
+      await signIn(provider);
+    } catch (e) {
+      setError("Something went wrong");
+      console.error(e);
+    } finally {
       setPending(false);
-    });
+    }
+  };
+
+  const signInWithPassword = async (formData: FormData) => {
+    if (step === "signUp") {
+      const password = formData.get("password");
+      const confirmPassword = formData.get("confirmPassword");
+
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        return;
+      }
+    }
+
+    setPending(true);
+
+    try {
+      await signIn("password", formData);
+    } catch (e) {
+      setError("Something went wrong");
+      console.error(e);
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
     <Card className="w-full h-full p-8">
       <CardHeader className="px-0 pt-0">
-        <CardTitle>Login to continue</CardTitle>
+        <CardTitle>
+          {step === "signIn" ? "Sign in" : "Sign up"} to continue
+        </CardTitle>
         <CardDescription>
           Use your email or another service to continue
         </CardDescription>
       </CardHeader>
+      {!!error && (
+        <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-x-2 text-sm text-destructive mb-6">
+          <TriangleAlert className="size-4" />
+          <p>{error}</p>
+        </div>
+      )}
       <CardContent className="space-y-5 px-0 pb-0">
-        <form className="space-y-2.5">
+        <form
+          className="space-y-2.5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            signInWithPassword(formData);
+          }}
+        >
           <Input
-            disabled={pending}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
+            name="email"
             type="email"
+            disabled={pending}
+            placeholder="Email"
             required
           />
           <Input
-            disabled={pending}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
+            name="password"
             type="password"
+            disabled={pending}
+            placeholder="Password"
             required
           />
+          {step === "signUp" && (
+            <Input
+              name="confirmPassword"
+              type="password"
+              disabled={pending}
+              placeholder="Confirm password"
+              required
+            />
+          )}
+          <input name="flow" type="hidden" value={step} />
           <Button className="w-full" type="submit" size="lg" disabled={false}>
             Continue
           </Button>
@@ -67,7 +115,7 @@ export const SignInCard = ({ setState }: SignInCardProps) => {
         <div className="flex flex-col gap-y-2.5">
           <Button
             disabled={pending}
-            onClick={() => signInWithProvider("google")}
+            onClick={() => signInWIthProvider("google")}
             variant="outline"
             size="lg"
             className="w-full relative"
@@ -77,7 +125,7 @@ export const SignInCard = ({ setState }: SignInCardProps) => {
           </Button>
           <Button
             disabled={pending}
-            onClick={() => signInWithProvider("github")}
+            onClick={() => signInWIthProvider("github")}
             variant="outline"
             size="lg"
             className="w-full relative"
@@ -87,12 +135,14 @@ export const SignInCard = ({ setState }: SignInCardProps) => {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          {step === "signIn"
+            ? "Don&apos;t have an account? "
+            : "Already have an account? "}
           <span
-            onClick={() => setState("signUp")}
+            onClick={() => setStep(step === "signIn" ? "signUp" : "signIn")}
             className="text-sky-700 hover:underline cursor-pointer"
           >
-            Sign Up
+            {step === "signIn" ? "Sign up" : "Sign in"}
           </span>
         </p>
       </CardContent>
