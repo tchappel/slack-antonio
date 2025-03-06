@@ -30,7 +30,7 @@ export const CreateWorkspaceModal = () => {
     if (!name) return;
     mutate(
       {
-        name: "Workspace1",
+        name,
       },
       {
         onSuccess: (workspaceId) => {
